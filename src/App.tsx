@@ -8,11 +8,11 @@ function App() {
   // Em um cenário real, esses dados seriam alterados pelos inputs de mistura
   const [formula, setFormula] = useState("6.0 (30g) + OX 20vol (45ml)");
   const [consumos, setConsumos] = useState<ProductConsumption[]>([
-    { product_id: "ID-DO-PRODUTO-NO-SUPABASE", quantity: 30.5 }
+    { product_id: "0f79634d-cde7-4649-a82b-6c84e5f7415c", qty: 10.5 }
   ]);
 
   // 3. ID de teste (Pegue um ID real na sua tabela 'appointments' do Supabase para testar o clique)
-  const TEST_APPOINTMENT_ID = "00000000-0000-0000-0000-000000000000";
+  const TEST_APPOINTMENT_ID = "53104d7a-3d4f-4dcf-b312-ee69f6bbec21";
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
