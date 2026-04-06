@@ -1,129 +1,60 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from 'react';
+// 1. Importamos o tipo para garantir que os dados de teste estejam corretos
+import { type ProductConsumption } from './services/AppointmentService';
+import AppointmentCheckout from './components/AppointmentCheckout';
 
 function App() {
+  // 2. Simulamos o estado que viria dos seus outros componentes (como o seletor de gramas)
+  // Em um cenário real, esses dados seriam alterados pelos inputs de mistura
+  const [formula, setFormula] = useState("6.0 (30g) + OX 20vol (45ml)");
+  const [consumos, setConsumos] = useState<ProductConsumption[]>([
+    { product_id: "ID-DO-PRODUTO-NO-SUPABASE", quantity: 30.5 }
+  ]);
+
+  // 3. ID de teste (Pegue um ID real na sua tabela 'appointments' do Supabase para testar o clique)
+  const TEST_APPOINTMENT_ID = "00000000-0000-0000-0000-000000000000";
+
   return (
-    <h1 className="text-3xl font-bold text-pink-500 underline">
-      Tailwind Funcionado!
-    </h1>
-  )
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Header Mobile First */}
+      <header className="bg-white p-6 shadow-sm border-b border-slate-100">
+        <h1 className="text-xl font-black text-slate-800 tracking-tight">
+          FINALIZAR <span className="text-pink-600">ATENDIMENTO</span>
+        </h1>
+        <p className="text-xs text-slate-400 font-bold uppercase mt-1">
+          Confirmação de Mistura e Estoque
+        </p>
+      </header>
+      
+      <main className="flex-1 p-4 max-w-md mx-auto w-full space-y-6">
+        {/* Card de Resumo (Simulação) */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+          <h3 className="text-sm font-bold text-slate-400 uppercase mb-4">Resumo da Fórmula</h3>
+          <p className="text-slate-600 italic">"{formula}"</p>
+          <div className="mt-4 pt-4 border-t border-slate-50">
+            <p className="text-xs text-slate-400">Produtos selecionados: {consumos.length}</p>
+          </div>
+        </div>
+
+        {/* 4. Chamada do Componente com as PROPS obrigatórias */}
+        <AppointmentCheckout 
+          appointmentId={TEST_APPOINTMENT_ID}
+          consumptions={consumos}
+          formula={formula}
+          onSuccess={() => {
+            console.log("Limpar campos ou redirecionar aqui...");
+            setFormula("");
+            setConsumos([]);
+          }}
+        />
+      </main>
+
+      {/* Footer / Navbar Mobile (Opcional) */}
+      <footer className="p-4 text-center">
+        <p className="text-[10px] text-slate-300 font-medium">SALAO APP v1.0.0 • POWERED BY SUPABASE</p>
+      </footer>
+    </div>
+  );
 }
 
-// function App() {
-//   const [count, setCount] = useState(0)
-
-//   return (
-//     <>
-//       <section id="center">
-//         <div className="hero">
-//           <img src={heroImg} className="base" width="170" height="179" alt="" />
-//           <img src={reactLogo} className="framework" alt="React logo" />
-//           <img src={viteLogo} className="vite" alt="Vite logo" />
-//         </div>
-//         <div>
-//           <h1>Get started</h1>
-//           <p>
-//             Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-//           </p>
-//         </div>
-//         <button
-//           className="counter"
-//           onClick={() => setCount((count) => count + 1)}
-//         >
-//           Count is {count}
-//         </button>
-//       </section>
-
-//       <div className="ticks"></div>
-
-//       <section id="next-steps">
-//         <div id="docs">
-//           <svg className="icon" role="presentation" aria-hidden="true">
-//             <use href="/icons.svg#documentation-icon"></use>
-//           </svg>
-//           <h2>Documentation</h2>
-//           <p>Your questions, answered</p>
-//           <ul>
-//             <li>
-//               <a href="https://vite.dev/" target="_blank">
-//                 <img className="logo" src={viteLogo} alt="" />
-//                 Explore Vite
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://react.dev/" target="_blank">
-//                 <img className="button-icon" src={reactLogo} alt="" />
-//                 Learn more
-//               </a>
-//             </li>
-//           </ul>
-//         </div>
-//         <div id="social">
-//           <svg className="icon" role="presentation" aria-hidden="true">
-//             <use href="/icons.svg#social-icon"></use>
-//           </svg>
-//           <h2>Connect with us</h2>
-//           <p>Join the Vite community</p>
-//           <ul>
-//             <li>
-//               <a href="https://github.com/vitejs/vite" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#github-icon"></use>
-//                 </svg>
-//                 GitHub
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://chat.vite.dev/" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#discord-icon"></use>
-//                 </svg>
-//                 Discord
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://x.com/vite_js" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#x-icon"></use>
-//                 </svg>
-//                 X.com
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://bsky.app/profile/vite.dev" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#bluesky-icon"></use>
-//                 </svg>
-//                 Bluesky
-//               </a>
-//             </li>
-//           </ul>
-//         </div>
-//       </section>
-
-//       <div className="ticks"></div>
-//       <section id="spacer"></section>
-//     </>
-//   )
-// }
-
-export default App
+export default App;
