@@ -52,4 +52,25 @@ export class AppointmentService {
     if (error) throw error;
     return data;
   }
+
+  static async getCustomerHistory(customerId: string) {
+  const { data, error } = await supabase
+    .from('technical_histories')
+    .select(`
+      id,
+      formula,
+      created_at,
+      appointments (
+        start_time,
+        appointment_items (
+          services (name)
+        )
+      )
+    `)
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
 }
