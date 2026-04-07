@@ -1,157 +1,276 @@
-import { useState } from 'react';
-import CustomerSearch from './components/CustomerSearch';
-import TechnicalHistory from './components/TechnicalHistory';
-import AppointmentCheckout from './components/AppointmentCheckout';
-import { type Customer } from './services/CustomerService';
-import { type ProductConsumption } from './services/AppointmentService';
-import { 
-  User, History, Beaker, ArrowLeft, 
-  Search as SearchIcon, Package, LayoutDashboard, Settings 
-} from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useAuth } from './hooks/useAuth'; // Abstraímos a lógica de sessão
+import { useSalon } from './context/SalonContext';
 
-type AppView = 'home' | 'search' | 'profile' | 'inventory';
+// Views
+import Auth from './components/Auth';
+import { HomeView } from './components/views/HomeView';
+import { SearchView } from './components/views/SearchView';
+import { ProfileView } from './components/views/ProfileView';
+import { SettingsView } from './components/views/SettingsView';
+
+// Layout & UI
+import { MainLayout } from './components/layout/MainLayout';
+import { LoadingScreen } from './components/ui/LoadingScreen';
+
+export type AppView = 'home' | 'search' | 'profile' | 'inventory' | 'settings';
 
 export default function App() {
+  const { salon, loading: salonLoading } = useSalon();
+  const { session, role, loading: authLoading } = useAuth();
+  
+  // Estado de Navegação
   const [view, setView] = useState<AppView>('home');
-  const [activeTab, setActiveTab] = useState<'history' | 'checkout'>('history');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
-  // Dados de teste para o Checkout (Serão substituídos pelo seletor de produtos futuramente)
-  const [formula, setFormula] = useState("Coloração 6.0 (30g) + OX 20vol (45ml)");
-  const [consumos, setConsumos] = useState<ProductConsumption[]>([
-    { product_id: "COLE_UM_ID_DE_PRODUTO_AQUI", qty: 30.5 }
-  ]);
-
-  const handleCustomerSelect = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setView('profile');
+  // Strategy Pattern: Mapeamento de telas
+  // O React Compiler otimiza este objeto automaticamente
+  const renderView = () => {
+    switch (view) {
+      case 'home':     return <HomeView onNavigate={setView} role={role} />;
+      case 'search':   return <SearchView onSelect={(c) => { 
+                                  setSelectedCustomerId(c.id); 
+                                  setView('profile'); 
+                               }} />;
+      case 'profile':  return <ProfileView customerId={selectedCustomerId!} />;
+      case 'settings': return <SettingsView role={role} />;
+      default:         return <HomeView onNavigate={setView} role={role} />;
+    }
   };
 
+  if (salonLoading || authLoading) return <LoadingScreen />;
+  if (!session) return <Auth />;
+
+  // Se for cliente, mostramos o portal específico (Portal Pattern)
+  if (role === 'customer') return <CustomerPortal session={session} salon={salon} />;
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased text-slate-900">
-      
-      {/* Header Adaptativo */}
-      <header className="bg-white p-6 shadow-sm border-b border-slate-100 sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          {view !== 'home' && (
-            <button 
-              onClick={() => setView(view === 'profile' ? 'search' : 'home')} 
-              className="p-2 bg-slate-50 rounded-xl text-slate-400 active:scale-90 transition-transform"
-            >
-              <ArrowLeft size={20} />
-            </button>
-          )}
-          <div>
-            <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none">
-              {view === 'home' ? 'SALAO APP' : view === 'search' ? 'BUSCAR CLIENTE' : selectedCustomer?.name}
-            </h1>
-            <p className="text-[10px] text-pink-500 font-bold uppercase mt-1 tracking-widest">
-              {view === 'profile' ? (selectedCustomer?.phone || 'CLIENTE') : 'GERENCIAMENTO PRO'}
-            </p>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 max-w-md mx-auto w-full pb-28">
-        
-        {/* VIEW: HOME (Dashboard de Navegação) */}
-        {view === 'home' && (
-          <div className="grid grid-cols-2 gap-4 animate-in fade-in zoom-in duration-300">
-            <button 
-              onClick={() => setView('search')}
-              className="col-span-2 h-40 bg-pink-600 rounded-[2.5rem] p-6 text-white flex flex-col justify-between shadow-xl shadow-pink-100 active:scale-95 transition-all"
-            >
-              <SearchIcon size={32} />
-              <div className="text-left">
-                <p className="text-2xl font-black">Atendimento</p>
-                <p className="text-pink-100 text-xs">Busca, Histórico e Mistura</p>
-              </div>
-            </button>
-
-            <button 
-              onClick={() => alert("Módulo de Estoque em breve...")}
-              className="h-40 bg-white rounded-[2.5rem] p-6 text-slate-700 flex flex-col justify-between shadow-sm border border-slate-100 active:scale-95 transition-all"
-            >
-              <Package size={32} className="text-indigo-500" />
-              <div className="text-left">
-                <p className="font-bold">Estoque</p>
-                <p className="text-slate-400 text-[10px]">Produtos e Níveis</p>
-              </div>
-            </button>
-
-            <button 
-              onClick={() => alert("Configurações em breve...")}
-              className="h-40 bg-white rounded-[2.5rem] p-6 text-slate-700 flex flex-col justify-between shadow-sm border border-slate-100 active:scale-95 transition-all"
-            >
-              <Settings size={32} className="text-slate-400" />
-              <div className="text-left">
-                <p className="font-bold">Ajustes</p>
-                <p className="text-slate-400 text-[10px]">Salão e Perfil</p>
-              </div>
-            </button>
-          </div>
-        )}
-
-        {/* VIEW: BUSCA */}
-        {view === 'search' && (
-          <div className="space-y-6 animate-in slide-in-from-right duration-300">
-            <CustomerSearch onSelect={handleCustomerSelect} />
-            <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem]">
-              <User className="mx-auto text-slate-200 mb-2" size={40} />
-              <p className="text-slate-400 text-sm">Busque pelo nome da cliente para acessar a ficha técnica.</p>
-            </div>
-          </div>
-        )}
-
-        {/* VIEW: PERFIL (HISTÓRICO + CHECKOUT) */}
-        {view === 'profile' && (
-          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-            <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-              <button 
-                onClick={() => setActiveTab('history')}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'history' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400'}`}
-              >
-                <History size={18} /> Histórico
-              </button>
-              <button 
-                onClick={() => setActiveTab('checkout')}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'checkout' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400'}`}
-              >
-                <Beaker size={18} /> Nova Mistura
-              </button>
-            </div>
-
-            {activeTab === 'history' ? (
-              <TechnicalHistory customerId={selectedCustomer!.id} />
-            ) : (
-              <div className="space-y-6">
-                {/* Aqui entrará o componente seletor de gramas real na próxima etapa */}
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 text-slate-400 text-sm text-center">
-                  Prepare a mistura de produtos para <strong>{selectedCustomer?.name}</strong>.
-                </div>
-                
-                <AppointmentCheckout 
-                  appointmentId="PEGUE_UM_ID_REAL_NO_BANCO_PARA_TESTE" 
-                  consumptions={consumos} 
-                  formula={formula} 
-                  onSuccess={() => setView('home')}
-                />
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* Nav de Status PWA */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-100 p-4 flex justify-center items-center">
-         <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Sistema Online • DB Conectado</span>
-         </div>
-      </nav>
-    </div>
+    <MainLayout 
+      view={view} 
+      setView={setView} 
+      salonName={salon?.name}
+      customerName={selectedCustomerId ? "Ficha da Cliente" : undefined}
+    >
+      {renderView()}
+    </MainLayout>
   );
 }
+
+
+// import { useState } from 'react';
+// import CustomerSearch from './components/CustomerSearch';
+// import TechnicalHistory from './components/TechnicalHistory';
+// import AppointmentCheckout from './components/AppointmentCheckout';
+// import { type Customer } from './services/CustomerService';
+// import { type ProductConsumption } from './services/AppointmentService';
+// import { 
+//   User, History, Beaker, ArrowLeft, 
+//   Search as SearchIcon, Package, LayoutDashboard, Settings 
+// } from 'lucide-react';
+
+// type AppView = 'home' | 'search' | 'profile' | 'inventory';
+
+// export default function App() {
+//   const [view, setView] = useState<AppView>('home');
+//   const [activeTab, setActiveTab] = useState<'history' | 'checkout'>('history');
+//   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+
+//   // Dados de teste para o Checkout (Serão substituídos pelo seletor de produtos futuramente)
+//   const [formula, setFormula] = useState("Coloração 6.0 (30g) + OX 20vol (45ml)");
+//   const [consumos, setConsumos] = useState<ProductConsumption[]>([
+//     { product_id: "COLE_UM_ID_DE_PRODUTO_AQUI", qty: 30.5 }
+//   ]);
+
+//   const handleCustomerSelect = (customer: Customer) => {
+//     setSelectedCustomer(customer);
+//     setView('profile');
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased text-slate-900">
+      
+//       {/* Header Adaptativo */}
+//       <header className="bg-white p-6 shadow-sm border-b border-slate-100 sticky top-0 z-50">
+//         <div className="flex items-center gap-4">
+//           {view !== 'home' && (
+//             <button 
+//               onClick={() => setView(view === 'profile' ? 'search' : 'home')} 
+//               className="p-2 bg-slate-50 rounded-xl text-slate-400 active:scale-90 transition-transform"
+//             >
+//               <ArrowLeft size={20} />
+//             </button>
+//           )}
+//           <div>
+//             <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none">
+//               {view === 'home' ? 'SALAO APP' : view === 'search' ? 'BUSCAR CLIENTE' : selectedCustomer?.name}
+//             </h1>
+//             <p className="text-[10px] text-pink-500 font-bold uppercase mt-1 tracking-widest">
+//               {view === 'profile' ? (selectedCustomer?.phone || 'CLIENTE') : 'GERENCIAMENTO PRO'}
+//             </p>
+//           </div>
+//         </div>
+//       </header>
+
+//       <main className="flex-1 p-4 max-w-md mx-auto w-full pb-28">
+        
+//         {/* VIEW: HOME (Dashboard de Navegação) */}
+//         {view === 'home' && (
+//           <div className="grid grid-cols-2 gap-4 animate-in fade-in zoom-in duration-300">
+//             <button 
+//               onClick={() => setView('search')}
+//               className="col-span-2 h-40 bg-pink-600 rounded-[2.5rem] p-6 text-white flex flex-col justify-between shadow-xl shadow-pink-100 active:scale-95 transition-all"
+//             >
+//               <SearchIcon size={32} />
+//               <div className="text-left">
+//                 <p className="text-2xl font-black">Atendimento</p>
+//                 <p className="text-pink-100 text-xs">Busca, Histórico e Mistura</p>
+//               </div>
+//             </button>
+
+//             <button 
+//               onClick={() => alert("Módulo de Estoque em breve...")}
+//               className="h-40 bg-white rounded-[2.5rem] p-6 text-slate-700 flex flex-col justify-between shadow-sm border border-slate-100 active:scale-95 transition-all"
+//             >
+//               <Package size={32} className="text-indigo-500" />
+//               <div className="text-left">
+//                 <p className="font-bold">Estoque</p>
+//                 <p className="text-slate-400 text-[10px]">Produtos e Níveis</p>
+//               </div>
+//             </button>
+
+//             <button 
+//               onClick={() => alert("Configurações em breve...")}
+//               className="h-40 bg-white rounded-[2.5rem] p-6 text-slate-700 flex flex-col justify-between shadow-sm border border-slate-100 active:scale-95 transition-all"
+//             >
+//               <Settings size={32} className="text-slate-400" />
+//               <div className="text-left">
+//                 <p className="font-bold">Ajustes</p>
+//                 <p className="text-slate-400 text-[10px]">Salão e Perfil</p>
+//               </div>
+//             </button>
+//           </div>
+//         )}
+
+//         {/* VIEW: BUSCA */}
+//         {view === 'search' && (
+//           <div className="space-y-6 animate-in slide-in-from-right duration-300">
+//             <CustomerSearch onSelect={handleCustomerSelect} />
+//             <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem]">
+//               <User className="mx-auto text-slate-200 mb-2" size={40} />
+//               <p className="text-slate-400 text-sm">Busque pelo nome da cliente para acessar a ficha técnica.</p>
+//             </div>
+//           </div>
+//         )}
+
+//         {/* VIEW: PERFIL (HISTÓRICO + CHECKOUT) */}
+//         {view === 'profile' && (
+//           <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+//             <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
+//               <button 
+//                 onClick={() => setActiveTab('history')}
+//                 className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'history' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400'}`}
+//               >
+//                 <History size={18} /> Histórico
+//               </button>
+//               <button 
+//                 onClick={() => setActiveTab('checkout')}
+//                 className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'checkout' ? 'bg-pink-600 text-white shadow-md' : 'text-slate-400'}`}
+//               >
+//                 <Beaker size={18} /> Nova Mistura
+//               </button>
+//             </div>
+
+//             {activeTab === 'history' ? (
+//               <TechnicalHistory customerId={selectedCustomer!.id} />
+//             ) : (
+//               <div className="space-y-6">
+//                 {/* Aqui entrará o componente seletor de gramas real na próxima etapa */}
+//                 <div className="bg-white p-6 rounded-3xl border border-slate-100 text-slate-400 text-sm text-center">
+//                   Prepare a mistura de produtos para <strong>{selectedCustomer?.name}</strong>.
+//                 </div>
+                
+//                 <AppointmentCheckout 
+//                   appointmentId="PEGUE_UM_ID_REAL_NO_BANCO_PARA_TESTE" 
+//                   consumptions={consumos} 
+//                   formula={formula} 
+//                   onSuccess={() => setView('home')}
+//                 />
+//               </div>
+//             )}
+//           </div>
+//         )}
+//       </main>
+
+//       {/* Nav de Status PWA */}
+//       <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-100 p-4 flex justify-center items-center">
+//          <div className="flex items-center gap-2">
+//             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+//             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Sistema Online • DB Conectado</span>
+//          </div>
+//       </nav>
+//     </div>
+//   );
+// }
+
+
+
+// import { useEffect, useState } from 'react';
+// import { supabase } from './lib/supabase';
+// import { AuthService, type UserRole } from './services/AuthService';
+// import Auth from './components/Auth';
+// import ProfessionalDashboard from './pages/ProfessionalDashboard'; // Sua Home atual
+// import CustomerPortal from './pages/CustomerPortal'; // Nova tela para clientes
+// import { Loader2 } from 'lucide-react';
+
+// export default function Root() {
+//   const [session, setSession] = useState<any>(null);
+//   const [role, setRole] = useState<UserRole | null>(null);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     // 1. Monitorar estado da sessão
+//     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+//       setSession(session);
+      
+//       if (session?.user) {
+//         // Buscar a role do usuário após o login
+//         try {
+//           // Podemos buscar no profile ou customer
+//           const { data: profile } = await supabase.from('profiles').select('role').single();
+//           if (profile) setRole(profile.role as UserRole);
+//           else setRole('customer');
+//         } catch {
+//           setRole('customer');
+//         }
+//       }
+//       setLoading(false);
+//     });
+
+//     return () => subscription.unsubscribe();
+//   }, []);
+
+//   if (loading) return (
+//     <div className="h-screen flex items-center justify-center bg-slate-50 text-pink-600">
+//       <Loader2 className="animate-spin" size={40} />
+//     </div>
+//   );
+
+//   // Se não está logado, mostra a tela de Auth (Login/Signup)
+//   if (!session) return <Auth />;
+
+//   // Se está logado, roteia pelo Role
+//   switch (role) {
+//     case 'owner':
+//     case 'admin':
+//     case 'professional':
+//       return <ProfessionalDashboard />;
+//     case 'customer':
+//       return <CustomerPortal />;
+//     default:
+//       return <Auth />;
+//   }
+// }
+
 
 // import { useState } from 'react';
 // import CustomerSearch from './components/CustomerSearch';
