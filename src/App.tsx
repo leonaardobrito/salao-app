@@ -1,60 +1,150 @@
-import { useState, useMemo } from 'react';
-import { useAuth } from './hooks/useAuth'; // Abstraímos a lógica de sessão
+import { useAuth } from './hooks/useAuth';
 import { useSalon } from './context/SalonContext';
 
-// Views
+// Pages
 import Auth from './components/Auth';
-import { HomeView } from './components/views/HomeView';
-import { SearchView } from './components/views/SearchView';
-import { ProfileView } from './components/views/ProfileView';
-import { SettingsView } from './components/views/SettingsView';
+import ProfessionalDashboard from './pages/ProfessionalDashboard';
+import CustomerPortal from './pages/CustomerPortal';
 
-// Layout & UI
-import { MainLayout } from './components/layout/MainLayout';
+// UI
 import { LoadingScreen } from './components/ui/LoadingScreen';
-
-export type AppView = 'home' | 'search' | 'profile' | 'inventory' | 'settings';
 
 export default function App() {
   const { salon, loading: salonLoading } = useSalon();
-  const { session, role, loading: authLoading } = useAuth();
-  
-  // Estado de Navegação
-  const [view, setView] = useState<AppView>('home');
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const { role, loading: authLoading, isAuthenticated, session } = useAuth();
 
-  // Strategy Pattern: Mapeamento de telas
-  // O React Compiler otimiza este objeto automaticamente
-  const renderView = () => {
-    switch (view) {
-      case 'home':     return <HomeView onNavigate={setView} role={role} />;
-      case 'search':   return <SearchView onSelect={(c) => { 
-                                  setSelectedCustomerId(c.id); 
-                                  setView('profile'); 
-                               }} />;
-      case 'profile':  return <ProfileView customerId={selectedCustomerId!} />;
-      case 'settings': return <SettingsView role={role} />;
-      default:         return <HomeView onNavigate={setView} role={role} />;
-    }
-  };
+  // 1. Splash Screen enquanto carrega o contexto e a sessão
+  if (salonLoading || authLoading) {
+    return <LoadingScreen />;
+  }
 
-  if (salonLoading || authLoading) return <LoadingScreen />;
-  if (!session) return <Auth />;
+  // 2. Se não estiver logado, obriga a passar pela página de Auth
+  if (!isAuthenticated) {
+    return <Auth />;
+  }
 
-  // Se for cliente, mostramos o portal específico (Portal Pattern)
-  if (role === 'customer') return <CustomerPortal session={session} salon={salon} />;
+  // 3. Roteamento de "Ambiente" (Pages)
+  // Se for cliente, vai para o Portal. Se for Staff, vai para o Dashboard.
+  if (role === 'customer') {
+    return <CustomerPortal session={session} salon={salon} />;
+  }
 
-  return (
-    <MainLayout 
-      view={view} 
-      setView={setView} 
-      salonName={salon?.name}
-      customerName={selectedCustomerId ? "Ficha da Cliente" : undefined}
-    >
-      {renderView()}
-    </MainLayout>
-  );
+  // Fallback para Owner, Admin e Professional
+  return <ProfessionalDashboard />;
 }
+
+// import { useState } from 'react';
+// import { useAuth } from './hooks/useAuth';
+// import { useSalon } from './context/SalonContext';
+
+// // UI
+// import Auth from './components/Auth';
+// import { LoadingScreen } from './components/ui/LoadingScreen';
+// import { MainLayout } from './components/layout/MainLayout';
+
+// // Views
+// import { HomeView } from './components/views/HomeView';
+// import { SearchView } from './components/views/SearchView';
+// import { ProfileView } from './components/views/ProfileView';
+// import { SettingsView } from './components/views/SettingsView';
+// import CustomerPortal from './pages/CustomerPortal'; // Import para a tela de clientes
+
+// export type AppView = 'home' | 'search' | 'profile' | 'inventory' | 'settings';
+
+// export default function App() {
+//   const { salon, loading: salonLoading } = useSalon();
+//   const { role, loading: authLoading, isAuthenticated, session } = useAuth();
+//   const [view, setView] = useState<AppView>('home');
+//   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+
+//   if (salonLoading || authLoading) return <LoadingScreen />;
+//   if (!isAuthenticated) return <Auth />;
+
+//   if (role === 'customer') return <CustomerPortal session={session} salon={salon} />;
+
+//   const renderView = () => {
+//     switch (view) {
+//       case 'home':     return <HomeView onNavigate={setView} role={role} />;
+//       case 'search':   return <SearchView onSelect={(c) => { 
+//                                   setSelectedCustomerId(c.id); 
+//                                   setView('profile'); 
+//                                }} />;
+//       case 'profile':  return <ProfileView customerId={selectedCustomerId!} />;
+//       case 'settings': return <SettingsView role={role} />;
+//       default:         return <HomeView onNavigate={setView} role={role} />;
+//     }
+//   };
+
+//   return (
+//     <MainLayout 
+//       view={view} 
+//       setView={setView} 
+//       salonName={salon?.name}
+//       customerName={selectedCustomerId ? "Ficha Técnica" : undefined}
+//     >
+//       {renderView()}
+//     </MainLayout>
+//   );
+// }
+
+// import { useState, useMemo } from 'react';
+// import { useAuth } from './hooks/useAuth'; // Abstraímos a lógica de sessão
+// import { useSalon } from './context/SalonContext';
+
+// // Views
+// import Auth from './components/Auth';
+// import { HomeView } from './components/views/HomeView';
+// import { SearchView } from './components/views/SearchView';
+// import { ProfileView } from './components/views/ProfileView';
+// import { SettingsView } from './components/views/SettingsView';
+// import CustomerPortal from './pages/CustomerPortal'; // Import for customer role
+
+// // Layout & UI
+// import { MainLayout } from './components/layout/MainLayout';
+// import { LoadingScreen } from './components/ui/LoadingScreen';
+
+// export type AppView = 'home' | 'search' | 'profile' | 'inventory' | 'settings';
+
+// export default function App() {
+//   const { salon, loading: salonLoading } = useSalon();
+//   const { session, role, loading: authLoading } = useAuth();
+  
+//   // Estado de Navegação
+//   const [view, setView] = useState<AppView>('home');
+//   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+
+//   // Strategy Pattern: Mapeamento de telas
+//   // O React Compiler otimiza este objeto automaticamente
+//   const renderView = () => {
+//     switch (view) {
+//       case 'home':     return <HomeView onNavigate={setView} role={role} />;
+//       case 'search':   return <SearchView onSelect={(c) => { 
+//                                   setSelectedCustomerId(c.id); 
+//                                   setView('profile'); 
+//                                }} />;
+//       case 'profile':  return <ProfileView customerId={selectedCustomerId!} />;
+//       case 'settings': return <SettingsView role={role} />;
+//       default:         return <HomeView onNavigate={setView} role={role} />;
+//     }
+//   };
+
+//   if (salonLoading || authLoading) return <LoadingScreen />;
+//   if (!session) return <Auth />;
+
+//   // Se for cliente, mostramos o portal específico (Portal Pattern)
+//   if (role === 'customer') return <CustomerPortal session={session} salon={salon} />;
+
+//   return (
+//     <MainLayout 
+//       view={view} 
+//       setView={setView} 
+//       salonName={salon?.name}
+//       customerName={selectedCustomerId ? "Ficha da Cliente" : undefined}
+//     >
+//       {renderView()}
+//     </MainLayout>
+//   );
+// }
 
 
 // import { useState } from 'react';

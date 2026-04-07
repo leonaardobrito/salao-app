@@ -1,62 +1,49 @@
-import { supabase } from '../lib/supabase';
-
-// Tipagem para garantir precisão no consumo
-export interface ProductConsumption {
-  product_id: string;
-  qty: number;
-}
+import { supabase } from "../lib/supabase";
+import type { ProductConsumption } from "../types";
 
 export class AppointmentService {
-  /**
-   * Finaliza um atendimento realizando checkout financeiro e de estoque.
-   * Chama a função RPC process_appointment_checkout no PostgreSQL.
-   */
   static async checkout(
     appointmentId: string,
     consumptions: ProductConsumption[],
     formula: string,
-    paymentMethod: 'cash' | 'credit_card' | 'debit_card' | 'pix'
+    paymentMethod: "cash" | "credit_card" | "debit_card" | "pix"
   ) {
     try {
-      // O Supabase entende automaticamente os parâmetros da RPC
-      const { data, error } = await supabase.rpc('process_appointment_checkout', {
+      const { data, error } = await supabase.rpc("process_appointment_checkout", {
         p_appointment_id: appointmentId,
-        p_consumptions: consumptions, // O PostgreSQL converterá o array JS para JSONB
+        p_consumptions: consumptions,
         p_formula_text: formula,
-        p_payment_method: paymentMethod
+        p_payment_method: paymentMethod,
       });
 
       if (error) {
-        // Tratamento de erros específicos do banco (ex: estoque insuficiente)
-        console.error('Erro na RPC de Checkout:', error.message);
+        console.error("Erro na RPC de Checkout:", error.message);
         throw new Error(error.message);
       }
 
       return { success: true, data };
     } catch (err) {
-      console.error('Falha crítica no checkout:', err);
+      console.error("Falha crítica no checkout:", err);
       throw err;
     }
   }
 
-  /**
-   * Busca histórico técnico do cliente (Anamnese Estruturada)
-   */
   static async getTechnicalHistory(customerId: string) {
     const { data, error } = await supabase
-      .from('technical_histories')
-      .select('*')
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false });
+      .from("technical_histories")
+      .select("*")
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     return data;
   }
 
   static async getCustomerHistory(customerId: string) {
-  const { data, error } = await supabase
-    .from('technical_histories')
-    .select(`
+    const { data, error } = await supabase
+      .from("technical_histories")
+      .select(
+        `
       id,
       formula,
       created_at,
@@ -66,11 +53,52 @@ export class AppointmentService {
           services (name)
         )
       )
-    `)
-    .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    `
+      )
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: false });
 
-  if (error) throw error;
-  return data;
-}
+    if (error) throw error;
+    return data;
+  }
+
+  static async getSalonAppointments(salonId: string) {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select(
+        `
+        id,
+        start_time,
+        end_time,
+        status,
+        customer:customers(id, name, phone),
+        professional:profiles(id, full_name, avatar_url),
+        appointment_items(service:services(id, name, price))
+      `
+      )
+      .eq("salon_id", salonId)
+      .order("start_time", { ascending: false });
+
+    if (error) throw error;
+    return data;
+  }
+
+  static async getAppointmentDetails(appointmentId: string) {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select(
+        `
+        *,
+        customer:customers(id, name, phone),
+        professional:profiles(id, full_name, avatar_url),
+        appointment_items(service:services(id, name, price)),
+        technical_history(id, formula)
+      `
+      )
+      .eq("id", appointmentId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
 }

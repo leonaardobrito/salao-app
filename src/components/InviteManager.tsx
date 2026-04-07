@@ -10,7 +10,8 @@ export default function InviteManager() {
 
   const generate = async () => {
     if (!salon?.id) return;
-    const url = await InviteService.createInvite(salon.id, null, 'professional');
+    const token = await InviteService.createInvite(salon.id, null, 'professional');
+    const url = `${window.location.origin}/invite/${token}`;
     setInviteUrl(url);
   };
 

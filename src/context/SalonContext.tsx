@@ -1,121 +1,156 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import type { Salon } from '../types';
 
-interface Salon {
-  id: string;
-  name: string;
-  slug: string;
-  settings: any;
+interface SalonContextType {
+  salon: Salon | null;
+  loading: boolean;
+  setSalon: (salon: Salon | null) => void;
 }
 
-const SalonContext = createContext<{ salon: Salon | null; loading: boolean }>({ 
-  salon: null, 
-  loading: true 
-});
+const SalonContext = createContext<SalonContextType | undefined>(undefined);
 
-export function SalonProvider({ children }: { children: React.ReactNode }) {
+export function SalonProvider({ children }: { children: ReactNode }) {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function resolveSalon() {
-      const searchParams = new URLSearchParams(window.location.search);
-      const inviteToken = searchParams.get('invite');
+    const resolveSalon = async () => {
       const hostname = window.location.hostname;
-      const devSlug = searchParams.get('salon') || import.meta.env.VITE_DEV_SALON_SLUG;
+      const searchParams = new URLSearchParams(window.location.search);
+      const slug = searchParams.get('salon') || import.meta.env.VITE_DEV_SALON_SLUG;
 
-      try {
-        // PRIORIDADE 1: Se houver convite, buscamos o salão dono do convite
-        if (inviteToken) {
-          const { data } = await supabase
-            .from('invites')
-            .select('salons (*)')
-            .eq('token', inviteToken)
-            .single();
-          if (data?.salons) return setSalon(data.salons[0] as Salon);
-        }
+      let query = supabase.from("salons").select("*");
 
-        // PRIORIDADE 2: Resolução por Hostname ou Slug (Local/Prod)
-        let query = supabase.from('salons').select('*');
-        if (hostname === 'localhost') {
-           query = query.eq('slug', devSlug);
-        } else {
-           query = query.or(`custom_domain.eq.${hostname},slug.eq.${hostname.split('.')[0]}`);
-        }
-        
-        const { data } = await query.single();
-        if (data) setSalon(data);
-
-      } catch (err) {
-        console.error("Erro na resolução de Tenant");
-      } finally {
-        setLoading(false);
+      if (hostname === 'localhost') {
+        if (slug) query = query.eq('slug', slug);
+      } else {
+        query = query.or(`custom_domain.eq.${hostname},slug.eq.${hostname.split('.')[0]}`);
       }
-    }
+
+      const { data } = await query.maybeSingle();
+      if (data) setSalon(data);
+      setLoading(false);
+    };
+
     resolveSalon();
   }, []);
 
-  return <SalonContext.Provider value={{ salon, loading }}>{children}</SalonContext.Provider>;
+  return (
+    <SalonContext.Provider value={{ salon, loading, setSalon }}>
+      {children}
+    </SalonContext.Provider>
+  );
 }
-export const useSalon = () => useContext(SalonContext);
 
-// import { createContext, useContext, useEffect, useState } from 'react';
+export const useSalon = () => {
+  const context = useContext(SalonContext);
+  if (!context) throw new Error('useSalon must be used within a SalonProvider');
+  return context;
+};
+
+
+// import { createContext, useContext, useState, useEffect } from 'react';
+// import type { ReactNode } from 'react';
 // import { supabase } from '../lib/supabase';
+// import type { Salon } from '../types';
 
-// interface Salon {
-//   id: string;
-//   name: string;
-//   slug: string;
-//   settings: any;
+// interface SalonContextType {
+//   salon: Salon | null;
+//   loading: boolean;
+//   error: string | null;
+//   setSalon: (salon: Salon | null) => void;
 // }
 
-// const SalonContext = createContext<{ salon: Salon | null; loading: boolean }>({ 
-//   salon: null, 
-//   loading: true 
-// });
+// const SalonContext = createContext<SalonContextType | undefined>(undefined);
 
-// export function SalonProvider({ children }: { children: React.ReactNode }) {
+// export function SalonProvider({ children }: { children: ReactNode }) {
 //   const [salon, setSalon] = useState<Salon | null>(null);
 //   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
 
 //   useEffect(() => {
-//     async function resolveSalon() {
-//       const hostname = window.location.hostname;
-//       const searchParams = new URLSearchParams(window.location.search);
-//       const devSlug = searchParams.get('salon') || import.meta.env.VITE_DEV_SALON_SLUG;
+//     const fetchSalon = async () => {
+//       try {
+//         setLoading(true);
+//         const { data: { user } } = await supabase.auth.getUser();
 
-//       let query = supabase.from('salons').select('*');
+//         if (user) {
+//           // Tenta buscar o salão do perfil do usuário
+//           const { data: profile, error: profileError } = await supabase
+//             .from("profiles")
+//             .select("salon_id")
+//             .eq("id", user.id)
+//             .maybeSingle();
 
-//       // Lógica de Resolução Prioritária
-//       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-//         // No localhost, priorizamos o slug da URL (?salon=gabi) ou do .env
-//         if (devSlug) {
-//           query = query.eq('slug', devSlug);
-//         } else {
-//           console.warn("⚠️ Ambiente local detectado sem slug de salão definido.");
-//           setLoading(false);
-//           return;
+//           if (profileError) throw profileError;
+
+//           if (profile?.salon_id) {
+//             const { data: salonData, error: salonError } = await supabase
+//               .from("salons")
+//               .select("*")
+//               .eq("id", profile.salon_id)
+//               .maybeSingle<Salon>();
+
+//             if (salonError) throw salonError;
+//             setSalon(salonData);
+//           } else {
+//             // Se não encontrou no perfil, tenta buscar o salão do cliente
+//             const { data: customer, error: customerError } = await supabase
+//               .from("customers")
+//               .select("salon_id")
+//               .eq("user_id", user.id)
+//               .maybeSingle();
+            
+//             if (customerError) throw customerError;
+
+//             if (customer?.salon_id) {
+//               const { data: salonData, error: salonError } = await supabase
+//                 .from("salons")
+//                 .select("*")
+//                 .eq("id", customer.salon_id)
+//                 .maybeSingle<Salon>();
+  
+//               if (salonError) throw salonError;
+//               setSalon(salonData);
+//             }
+//           }
 //         }
-//       } else {
-//         // Em produção, busca por domínio customizado ou slug
-//         query = query.or(`custom_domain.eq.${hostname},slug.eq.${hostname.split('.')[0]}`);
+//       } catch (err) {
+//         console.error("Erro ao carregar dados do salão:", err);
+//         setError("Falha ao carregar informações do salão.");
+//       } finally {
+//         setLoading(false);
 //       }
+//     };
 
-//       const { data, error } = await query.single();
+//     fetchSalon();
 
-//       if (data) setSalon(data);
-//       if (error) console.error("❌ Erro ao resolver salão:", error.message);
-      
-//       setLoading(false);
-//     }
-//     resolveSalon();
+//     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+//       if (session) {
+//         fetchSalon();
+//       } else {
+//         setSalon(null);
+//         setLoading(false);
+//       }
+//     });
+
+//     return () => {
+//       authListener.subscription.unsubscribe();
+//     };
 //   }, []);
 
 //   return (
-//     <SalonContext.Provider value={{ salon, loading }}>
+//     <SalonContext.Provider value={{ salon, loading, error, setSalon }}>
 //       {children}
 //     </SalonContext.Provider>
 //   );
 // }
 
-// export const useSalon = () => useContext(SalonContext);
+// export function useSalon() {
+//   const context = useContext(SalonContext);
+//   if (context === undefined) {
+//     throw new Error('useSalon must be used within a SalonProvider');
+//   }
+//   return context;
+// }
