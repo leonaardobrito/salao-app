@@ -15,23 +15,46 @@ export function SalonProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const resolveSalon = async () => {
-      const hostname = window.location.hostname;
-      const searchParams = new URLSearchParams(window.location.search);
-      const slug = searchParams.get('salon') || import.meta.env.VITE_DEV_SALON_SLUG;
+    // No useEffect do SalonContext.tsx
+const resolveSalon = async () => {
+  const hostname = window.location.hostname;
+  const searchParams = new URLSearchParams(window.location.search);
+  
+  // Captura o slug da URL (?salon=slug) ou do .env
+  const slugFromUrl = searchParams.get('salon');
+  const currentSlug = slugFromUrl || import.meta.env.VITE_DEV_SALON_SLUG;
 
-      let query = supabase.from("salons").select("*");
+  // Engenharia Sênior: Regex para detectar se é um IP local (192.168.x.x, 10.x.x.x, etc)
+  const isLocalNetwork = 
+    hostname === 'localhost' || 
+    hostname === '127.0.0.1' || 
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname); // Detecta qualquer IP
 
-      if (hostname === 'localhost') {
-        if (slug) query = query.eq('slug', slug);
-      } else {
-        query = query.or(`custom_domain.eq.${hostname},slug.eq.${hostname.split('.')[0]}`);
-      }
+  console.log("🔍 Resolvendo salão...", { hostname, isLocalNetwork, currentSlug });
 
-      const { data } = await query.maybeSingle();
-      if (data) setSalon(data);
+  let query = supabase.from("salons").select("*");
+
+  if (isLocalNetwork) {
+    // Se for local (PC ou Celular na mesma rede), força o uso do slug de teste
+    if (currentSlug) {
+      query = query.eq('slug', currentSlug);
+    } else {
+      console.error("❌ Erro: VITE_DEV_SALON_SLUG não definido no .env");
       setLoading(false);
-    };
+      return;
+    }
+  } else {
+    // Produção: Domínio customizado ou subdomínio (slug)
+    query = query.or(`custom_domain.eq.${hostname},slug.eq.${hostname.split('.')[0]}`);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) console.error("❌ Supabase Error:", error.message);
+  
+  setSalon(data || null);
+  setLoading(false);
+};
 
     resolveSalon();
   }, []);
