@@ -19,43 +19,44 @@ export function SalonProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function resolveSalon() {
-      const hostname = window.location.hostname;
       const searchParams = new URLSearchParams(window.location.search);
-      
-      // 1. Prioridade: Parâmetro na URL (?salon=gabi)
-      // 2. Segunda opção: Slug no .env (para seu dev diário)
-      // 3. Produção: Domínio customizado ou subdomínio
-      const currentSlug = searchParams.get('salon') || import.meta.env.VITE_DEV_SALON_SLUG;
+      const inviteToken = searchParams.get('invite');
+      const hostname = window.location.hostname;
+      const devSlug = searchParams.get('salon') || import.meta.env.VITE_DEV_SALON_SLUG;
 
-      let query = supabase.from('salons').select('*');
-
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        if (currentSlug) {
-          query = query.eq('slug', currentSlug);
+      try {
+        // PRIORIDADE 1: Se houver convite, buscamos o salão dono do convite
+        if (inviteToken) {
+          const { data } = await supabase
+            .from('invites')
+            .select('salons (*)')
+            .eq('token', inviteToken)
+            .single();
+          if (data?.salons) return setSalon(data.salons[0] as Salon);
         }
-      } else {
-        // Em produção: busca pelo domínio (salaodagabi.com) ou pelo slug (gabi.salaoapp.com)
-        query = query.or(`custom_domain.eq.${hostname},slug.eq.${hostname.split('.')[0]}`);
+
+        // PRIORIDADE 2: Resolução por Hostname ou Slug (Local/Prod)
+        let query = supabase.from('salons').select('*');
+        if (hostname === 'localhost') {
+           query = query.eq('slug', devSlug);
+        } else {
+           query = query.or(`custom_domain.eq.${hostname},slug.eq.${hostname.split('.')[0]}`);
+        }
+        
+        const { data } = await query.single();
+        if (data) setSalon(data);
+
+      } catch (err) {
+        console.error("Erro na resolução de Tenant");
+      } finally {
+        setLoading(false);
       }
-
-      const { data, error } = await query.maybeSingle();
-
-      if (data) setSalon(data);
-      if (error) console.error("Erro ao resolver salão:", error);
-      
-      setLoading(false);
     }
-    
     resolveSalon();
   }, []);
 
-  return (
-    <SalonContext.Provider value={{ salon, loading }}>
-      {children}
-    </SalonContext.Provider>
-  );
+  return <SalonContext.Provider value={{ salon, loading }}>{children}</SalonContext.Provider>;
 }
-
 export const useSalon = () => useContext(SalonContext);
 
 // import { createContext, useContext, useEffect, useState } from 'react';
