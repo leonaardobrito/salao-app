@@ -73,6 +73,15 @@ export interface ProductConsumption {
   qty: number; // Precisão decimal em gramas ou mililitros
 }
 
+export interface CreateAppointmentInput {
+  salon_id: string;
+  customer_id: string;
+  professional_id: string;
+  service_id: string;
+  start_time: string;
+  notes?: string;
+}
+
 export interface TechnicalHistory {
   id: string;
   customer_id: string;
