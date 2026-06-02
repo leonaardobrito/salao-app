@@ -23,7 +23,7 @@ export const HomeView = ({ onNavigate, role }: { onNavigate: (v: any) => void, r
           onClick={() => onNavigate('inventory')} 
         />
         <HomeCard 
-          icon={<Settings size={28} className="text-slate-400" />} 
+          icon={<Settings size={28} className="text-slate-600" />} 
           title="Ajustes" 
           subtitle="Configurações" 
           onClick={() => onNavigate('settings')} 
@@ -46,8 +46,8 @@ const HomeCard = ({ icon, title, subtitle, onClick }: any) => (
   >
     {icon}
     <div>
-      <p className="font-bold text-lg">{title}</p>
-      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{subtitle}</p>
+      <p className="font-bold text-lg text-slate-900">{title}</p>
+      <p className="text-slate-600 text-[10px] font-bold uppercase tracking-wider">{subtitle}</p>
     </div>
   </button>
 );

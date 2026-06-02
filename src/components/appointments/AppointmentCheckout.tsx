@@ -20,7 +20,7 @@ export default function AppointmentCheckout({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
 
   const handleFinishAtendimento = async () => {
-    // 1. Validação Defensiva (Engenharia Sênior)
+    // 1. Validação Defensiva 
     if (!appointmentId || appointmentId.length < 30) {
       return alert("Erro: ID de agendamento inválido ou ausente.");
     }

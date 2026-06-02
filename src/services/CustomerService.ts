@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase';
 import type { Customer } from '../types';
 
+export type { Customer };
+
 /**
  * Service responsável pela gestão do domínio de Clientes.
  * Aplica princípios de Clean Code e Defesa em Profundidade.

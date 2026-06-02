@@ -90,13 +90,13 @@ export default function AppointmentForm({ onClose, onRefresh }: AppointmentFormP
         {/* Header do Formulário */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Novo Horário</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Reserva de Procedimento</p>
+            <h2 className="text-2xl font-black text-slate-950 tracking-tighter uppercase">Novo Horário</h2>
+            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-1">Reserva de Procedimento</p>
           </div>
           <button 
             type="button" 
             onClick={onClose} 
-            className="p-2 bg-slate-50 rounded-full text-slate-400 active:scale-90 transition-transform"
+            className="p-2 bg-slate-50 rounded-full text-slate-600 active:scale-90 transition-transform"
           >
             <X size={20} />
           </button>
@@ -105,7 +105,7 @@ export default function AppointmentForm({ onClose, onRefresh }: AppointmentFormP
         <div className="space-y-6">
           {/* Seção Cliente */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Cliente Selecionada</label>
+            <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">Cliente Selecionada</label>
             {selectedCustomer ? (
               <div className="p-5 bg-pink-50 rounded-[1.5rem] border border-pink-100 flex justify-between items-center animate-in zoom-in-95">
                 <div className="flex items-center gap-4">
@@ -132,14 +132,14 @@ export default function AppointmentForm({ onClose, onRefresh }: AppointmentFormP
 
           {/* Seção Serviço */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Procedimento</label>
+            <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">Procedimento</label>
             <div className="relative group">
-              <Scissors className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-pink-500 transition-colors" size={20} />
+              <Scissors className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-pink-500 transition-colors" size={20} />
               <select 
                 required
                 value={formData.service_id}
                 onChange={e => setFormData({...formData, service_id: e.target.value})}
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none appearance-none outline-none focus:ring-2 focus:ring-pink-500/20 font-bold text-slate-700 transition-all"
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none appearance-none outline-none focus:ring-2 focus:ring-pink-500/20 font-bold text-slate-800 transition-all"
               >
                 <option value="">Escolha o serviço...</option>
                 {services.map(s => (
@@ -154,28 +154,28 @@ export default function AppointmentForm({ onClose, onRefresh }: AppointmentFormP
           {/* Data e Hora */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Data</label>
+              <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">Data</label>
               <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={18} />
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
                 <input 
                   type="date" 
                   required
                   value={formData.date}
                   onChange={e => setFormData({...formData, date: e.target.value})}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 focus:ring-2 focus:ring-pink-500/20"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-800 focus:ring-2 focus:ring-pink-500/20"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Hora</label>
+              <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">Hora</label>
               <div className="relative">
-                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={18} />
+                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
                 <input 
                   type="time" 
                   required
                   value={formData.time}
                   onChange={e => setFormData({...formData, time: e.target.value})}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 focus:ring-2 focus:ring-pink-500/20"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-800 focus:ring-2 focus:ring-pink-500/20"
                 />
               </div>
             </div>
