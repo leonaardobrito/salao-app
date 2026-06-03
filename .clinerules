@@ -1,0 +1,75 @@
+### 🎯 Visão do Produto & Diferenciais de Mercado
+Diferente dos concorrentes genéricos que fazem apenas controle de estoque por unidade, o nosso foco central é a **precisão cirúrgica do insumo químico** e a **inteligência de retenção de clientes**. O sistema deve ser enxuto, rápido para rodar em celulares e altamente modular para futuras expansões (como RBAC multiusuário e emissão de notas fiscais).
+
+### 🛠️ Stack Tecnológica Obrigatória
+- **Frontend:** React (Mobile‑First estrito, responsividade extrema para telas de toque)  
+- **Backend/Banco de Dados:** Supabase (PostgreSQL) conectado via Transaction Pooler na porta `6543` com `sslmode=disable`  
+- **Linguagem:** TypeScript com tipagem estrita (`strict: true`). Proibido o uso de `any`
+
+### 0. Princípios Fundamentais e Diretrizes de Desenvolvimento
+- **Mobile‑first e design responsivo:** Todas as interfaces devem ser otimizadas para smartphones, garantindo carregamento rápido e interações táteis intuitivas.  
+- **Escalabilidade e arquitetura modular:** O sistema deve ser construído para incorporar facilmente futuros módulos, como emissão de notas fiscais, marketplace para clientes ou sistema de permissões multi‑usuário.  
+- **Segurança e privacidade de dados:** Implementar autenticação robusta de usuários, criptografia de dados (em trânsito e em repouso) e backups automáticos regulares.  
+- **Simplicidade e baixa curva de aprendizado:** A interface do usuário deve ser direta para empreendedores individuais e pequenas equipes, evitando jargões complexos de ERP empresarial.  
+- **Produto lucrativo e comercializável:** O produto final deve ser posicionado como uma alternativa de ERP leve e acessível a sistemas como Gendo, Trinks ou Avec.
+
+### 1. Módulos e Funcionalidades Principais
+
+#### 1.1 Gestão de Clientes (CRM) & Ficha de Anamnese Dinâmica
+- **Perfil do Cliente:** Cadastro de dados pessoais, idade, aniversários, alergias e preferências (cor, comida, bebida).  
+- **Ficha de anamnese dinâmica:** Construtor de formulários para criar questionários personalizáveis (texto, múltipla escolha, escalas de avaliação, etc.).  
+- **Painel de perfil do cliente:** Armazenar todos os dados pessoais, histórico médico completo, histórico de visitas (serviços, datas, profissionais) e total gasto.  
+- **Galeria "antes e depois":** Suporte robusto para upload e organização de fotos diretamente vinculadas ao perfil do cliente, registrando a evolução dos tratamentos (armazenadas no Supabase Storage).  
+- **Registro da fórmula do procedimento:** Registrar a fórmula exata do produto (ex: "60g Cor X + 90ml Oxidante Vol. 20") e vinculá‑la à visita.
+
+#### 1.2 Agenda Inteligente & Alertas de Retenção
+- **Agenda de compromissos inteligente:** Visualizações diária, semanal e mensal adaptáveis para dispositivos móveis.  
+- **Status do Fluxo:** `Agendado` ➔ `Confirmado` ➔ `Realizado` ➔ `Cancelado`.  
+- **Alertas e gatilhos inteligentes:** Notificações configuráveis para:  
+  - Aniversários de clientes próximos.  
+  - Inatividade do cliente (ex: "Faz 30 dias desde a última visita").  
+  - **Estoque baixo** (ex: "O estoque de 'Cor X' chegou a 0 unidades").  
+  - Conflitos de agenda ou sobrelotação.  
+- **Compromissos recorrentes:** Suporte para criar séries de agendamentos com intervalos personalizáveis.  
+- **WhatsApp Quick‑Action:** Geração de templates de mensagens dinâmicas via link `https://wa.me/` para confirmações, lembretes e reativação de clientes ("Faz tempo que você não vem!").
+
+#### 1.3 Gestão de Estoque Granular & Baixa Automática
+- **Catálogo de produtos:** Registrar produtos por categoria (tintura, oxidante, máscara, etc.), unidade e estoque atual.  
+- **Controle por Peso/Volume:** Cadastro de produtos com suporte a fracionamento milimétrico em **gramas (g)** ou **mililitros (ml)** para colorações, oxidantes e cosméticos profissionais.  
+- **Registro granular de consumo:** Adicionar um formulário na tela de atendimento para registrar consumo com quantidades específicas por produto.  
+- **Automação Crítica:** Assim que o status de um atendimento mudar para `Realizado`, o sistema **deve** abater de forma automática as quantidades e pesos exatos informados na fórmula associada.  
+- **Alertas de estoque baixo:** Definir níveis mínimos de estoque por produto para acionar alertas ("Inferno").  
+- **Integrar rastreamento de custos:** Registrar o preço de compra de cada item, permitindo calcular o custo real do insumo consumido.
+
+#### 1.4 Controle Financeiro & Margem Real
+- **Registro de despesas:** Registrar despesas fixas (aluguel, utilidades) e variáveis (suprimentos, limpeza).  
+- **Painel financeiro detalhado:** Exibir receita total, despesas totais e o lucro líquido resultante. Permitir filtragem por período (dia, semana, mês).  
+- **Gestão de comissões:** Módulo flexível para cálculo de comissões parametrizáveis por profissional, por tipo de serviço/produto ou por faixa de valor.  
+- **Métrica de Lucro Líquido Real:** O dashboard financeiro deve exibir o lucro deduzido pela fórmula exata:  
+  `Receita - Despesas - Comissão - Custo Real de Insumos Consumidos do Estoque`
+
+#### 1.5 Relatórios e Inteligência de Negócio
+- **Relatório de margem de lucro:** Calcular e exibir o lucro líquido real com base na fórmula acima.  
+- **Análise de uso de produtos:** Identificar os produtos e serviços mais vendidos, acompanhar o consumo médio por período para auxiliar nas decisões de compra.  
+- **Análise de Lifetime Value (LTV) do cliente:** Classificar clientes por receita gerada, frequência de visitas e ticket médio.
+
+#### 1.6 WhatsApp e Comunicação
+- **Atalhos de comunicação:** Botões com um toque para abrir o chat do WhatsApp com o cliente selecionado.  
+- **Fluxos de mensagens automatizadas:** Criar e enviar mensagens programadas ou baseadas em gatilhos (confirmações de agendamento, lembretes de aniversário, avisos de inatividade).
+
+### 2. Roadmap Futuro (Pós‑MVP)
+- **Integração com nota fiscal:** Módulo para gerar e gerenciar recibos fiscais relacionados aos serviços.  
+- **Controle de acesso baseado em funções (RBAC) para múltiplos usuários:** Permissões granulares para diferentes tipos de usuário (administrador, gerente, recepcionista, profissional).  
+- **Marketplace para clientes:** Um marketplace para listar e promover salões, ajudando‑os a atrair novos clientes.  
+- **Integrações avançadas com API:** Conectar com gateways de pagamento de terceiros, ferramentas de contabilidade ou API do WhatsApp Business.
+
+### 3. Diretrizes de Execução Técnica (para o Cline)
+1. **Uso das Ferramentas MCP:**  
+   - Realize leituras, criações de tabelas ou inserções no banco sempre através do servidor MCP `supabase-db`.  
+   - Lembre‑se de que a string de conexão está parametrizada com `sslmode=disable` no pooler da porta `6543`. Não tente buscar ou forçar flags de arquivo de certificado SSL local `/etc/ssl/...`.
+
+2. **Segurança e Isolamento:**  
+   - Projete as tabelas prevendo segurança em nível de linha (RLS – Row Level Security) do Supabase para garantir isolamento de dados futuros.
+
+3. **Arquitetura de Código:**  
+   - Arquitetura limpa, componentes React isolados, Hooks customizados para gerenciar as chamadas ao Supabase e reutilização de tipos TypeScript.
