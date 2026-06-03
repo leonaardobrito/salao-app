@@ -90,6 +90,38 @@ export interface TechnicalHistory {
   created_at: string;
 }
 
+// --- JOINED TYPES (For UI/Agenda) ---
+
+export interface AppointmentItemWithService {
+  id: string;
+  appointment_id: string;
+  service_id: string;
+  professional_id: string;
+  price_applied: number;
+  services: {
+    id: string;
+    name: string;
+    price: number;
+  };
+  profiles?: Profile;
+}
+
+export interface AppointmentWithRelations {
+  id: string;
+  salon_id: string;
+  customer_id: string;
+  start_time: string;
+  status: AppointmentStatus;
+  notes: string | null;
+  created_at: string;
+  customer: {
+    id: string;
+    name: string;
+    phone: string | null;
+  };
+  appointment_items: AppointmentItemWithService[];
+}
+
 // --- VALIDATION SCHEMAS (Zod - Design Pattern: DTO) ---
 
 /**

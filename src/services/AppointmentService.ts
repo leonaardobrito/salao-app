@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { ProductConsumption, AppointmentStatus, PaymentMethod } from '../types';
+import type { ProductConsumption, AppointmentStatus, PaymentMethod, AppointmentWithRelations } from '../types';
 
 /**
  * Interface para criação de novos agendamentos (DTO)
@@ -41,36 +41,47 @@ export class AppointmentService {
   }
 
   /**
-   * Busca a agenda do dia atual para um salão específico.
+   * Busca a agenda de um período para um salão específico.
    * PERFORMANCE: Utiliza Joins para trazer dados do cliente e serviço em uma única requisição.
    */
-  static async getTodayAppointments(salonId: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
+  static async getAppointments(salonId: string, startDate: Date, endDate: Date) {
     const { data, error } = await supabase
       .from('appointments')
       .select(`
         id,
+        salon_id,
+        customer_id,
         start_time,
         status,
+        notes,
+        created_at,
         customer:customers (id, name, phone),
         appointment_items (
+          id,
+          appointment_id,
+          service_id,
+          professional_id,
           price_applied,
           services (id, name, price)
         )
       `)
       .eq('salon_id', salonId)
-      .gte('start_time', today.toISOString())
-      .lt('start_time', tomorrow.toISOString())
-      .is('deleted_at', null) // Soft Delete Guard
+      .gte('start_time', startDate.toISOString())
+      .lt('start_time', endDate.toISOString())
+      .is('deleted_at', null)
       .order('start_time', { ascending: true });
 
     if (error) throw error;
-    return data;
+    return data as any as AppointmentWithRelations[];
+  }
+
+  /** @deprecated Use getAppointments instead */
+  static async getTodayAppointments(salonId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return this.getAppointments(salonId, today, tomorrow);
   }
 
   /**
